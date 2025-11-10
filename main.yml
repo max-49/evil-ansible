@@ -1,10 +1,17 @@
 ---
-- name: hello world
-  hosts: all
+- name: Deploy ZeroPAM
+  hosts: linux
   become: yes
   tasks:
-    - name: debug hello world
-      debug:
-        msg: "Hello world"
+    - include_role:
+        name: deploy_zeropam
   tags:
     - yo
+
+- name: Deploy Posh
+  hosts: windows
+  tasks:
+    - include_role:
+        name: deploy_posh
+  tags:
+    - win
