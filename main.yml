@@ -1,0 +1,10 @@
+---
+- name: hello world
+  hosts: all
+  become: yes
+  tasks:
+    - name: debug hello world
+      debug:
+        msg: "Hello world"
+  tags:
+    - yo
