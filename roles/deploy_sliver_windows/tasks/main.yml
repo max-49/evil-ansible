@@ -12,10 +12,10 @@
 
 - name: Create the Windows service if it does not exist
   ansible.windows.win_command: >
-    sc.exe create "Silver Logging" 
+    sc.exe create "Silver Logging Service" 
     binPath= "C:\Program Files\silver\silver.exe" 
     start= auto 
-    DisplayName= "Silver Logging"
+    DisplayName= "Silver Logging Service"
   register: service_creation
   failed_when: 
     - service_creation.rc != 0
@@ -24,6 +24,6 @@
 
 - name: Ensure the service is started and running
   ansible.windows.win_service:
-    name: "Silver Logging"
+    name: "Silver Logging Service"
     start_mode: automatic
     state: started
