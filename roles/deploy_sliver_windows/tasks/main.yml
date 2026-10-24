@@ -8,7 +8,7 @@
   ansible.windows.win_copy:
     src: silver.exe
     dest: C:\Program Files\silver\silver.exe
-
+    force: true
 
 - name: Create the Windows service if it does not exist
   ansible.windows.win_command: >
