@@ -9,10 +9,21 @@
     src: silver.exe
     dest: C:\Program Files\silver\silver.exe
 
-- name: Create wrapper Windows service
+
+- name: Create the Windows service if it does not exist
+  ansible.windows.win_command: >
+    sc.exe create "Silver Logging" 
+    binPath= "C:\Program Files\silver\silver.exe" 
+    start= auto 
+    DisplayName= "Silver Logging"
+  register: service_creation
+  failed_when: 
+    - service_creation.rc != 0
+    - "'already exists' not in service_creation.stderr"
+  changed_when: "'success' in service_creation.stdout|lower"
+
+- name: Ensure the service is started and running
   ansible.windows.win_service:
-    name: Silver Logging
-    display_name: Silver Logging
-    path: C:\Program Files\silver\silver.exe
-    start_mode: auto
+    name: "Silver Logging"
+    start_mode: automatic
     state: started
