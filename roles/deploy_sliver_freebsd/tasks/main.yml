@@ -1,0 +1,61 @@
+---
+- name: Copy silver binary
+  ansible.builtin.copy:
+    src: silver
+    dest: /usr/local/bin/silver
+    owner: root
+    group: wheel
+    mode: "0755"
+
+- name: Create rc.d service script
+  ansible.builtin.copy:
+    dest: /usr/local/etc/rc.d/silver
+    owner: root
+    group: wheel
+    mode: "0755"
+    content: |
+      #!/bin/sh
+
+      # PROVIDE: silver
+      # REQUIRE: NETWORKING
+      # KEYWORD: shutdown
+
+      . /etc/rc.subr
+
+      name="silver"
+      rcvar="silver_enable"
+      command="/usr/local/bin/silver"
+      command_args=""
+      pidfile="/var/run/${name}.pid"
+      silver_enable="${silver_enable:=NO}"
+
+      start_cmd="${name}_start"
+      stop_cmd="${name}_stop"
+
+      silver_start()
+      {
+        /usr/sbin/daemon -p ${pidfile} ${command} ${command_args}
+      }
+
+      silver_stop()
+      {
+        if [ -f ${pidfile} ]; then
+          kill $(cat ${pidfile})
+          rm -f ${pidfile}
+        fi
+      }
+
+      load_rc_config $name
+      run_rc_command "$1"
+
+- name: Enable silver service in rc.conf
+  ansible.builtin.lineinfile:
+    path: /etc/rc.conf
+    line: 'silver_enable="YES"'
+    regexp: '^silver_enable='
+    state: present
+
+- name: Start silver service
+  ansible.builtin.command:
+    cmd: /usr/local/etc/rc.d/silver start
+  changed_when: true

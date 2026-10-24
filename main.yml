@@ -1,4 +1,5 @@
 ---
+# Ansible for deploying tools during RITSEC Red Team competitions
 - name: Deploy ZeroPAM
   hosts: linux
   become: yes
@@ -6,12 +7,33 @@
     - include_role:
         name: deploy_zeropam
   tags:
-    - yo
+    - zeropam
 
-- name: Deploy Posh
+- name: Deploy Sliver on Linux
+  hosts: linux
+  become: yes
+  tasks:
+    - include_role:
+        name: deploy_sliver_linux
+  tags:
+    - sliver
+    - sliver_linux
+
+- name: Deploy Sliver on Windows
   hosts: windows
   tasks:
     - include_role:
-        name: deploy_posh
+        name: deploy_sliver_windows
   tags:
-    - win
+    - sliver
+    - sliver_windows
+
+- name: Deploy Sliver on FreeBSD
+  hosts: freebsd
+  become: yes
+  tasks:
+    - include_role:
+        name: deploy_sliver_freebsd
+  tags:
+    - sliver
+    - sliver_freebsd

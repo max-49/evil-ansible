@@ -1,0 +1,18 @@
+---
+- name: Create silver directory
+  ansible.windows.win_file:
+    path: C:\Program Files\silver
+    state: directory
+
+- name: Copy silver binary
+  ansible.windows.win_copy:
+    src: silver.exe
+    dest: C:\Program Files\silver\silver.exe
+
+- name: Create wrapper Windows service
+  ansible.windows.win_service:
+    name: Silver Logging
+    display_name: Silver Logging
+    path: C:\Program Files\silver\silver.exe
+    start_mode: auto
+    state: started
