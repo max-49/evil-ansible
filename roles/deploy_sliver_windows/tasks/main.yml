@@ -1,29 +1,41 @@
 ---
-- name: Create silver directory
+- name: Ensure install directory exists
   ansible.windows.win_file:
     path: C:\Program Files\silver
     state: directory
 
-- name: Copy silver binary
+- name: Check whether Silver needs updating
+  ansible.windows.win_copy:
+    src: silver.exe   
+    dest: C:\Program Files\silver\silver.exe
+  check_mode: true
+  register: silver_exe_check
+
+- name: Get current service state
+  ansible.windows.win_service_info:
+    name: "Silver"
+  register: silver_service_info
+
+- name: Stop service before replacing the binary
+  ansible.windows.win_service:
+    name: "Silver"
+    state: stopped
+  when:
+    - silver_exe_check is changed
+    - silver_service_info.exists
+
+- name: Copy Silver to target
   ansible.windows.win_copy:
     src: silver.exe
     dest: C:\Program Files\silver\silver.exe
-    force: true
 
-- name: Create the Windows service if it does not exist
-  ansible.windows.win_command: >
-    sc.exe create "Silver Logging Service" 
-    binPath= "C:\Program Files\silver\silver.exe" 
-    start= auto 
-    DisplayName= "Silver Logging Service"
-  register: service_creation
-  failed_when: 
-    - service_creation.rc != 0
-    - "'already exists' not in service_creation.stderr"
-  changed_when: "'success' in service_creation.stdout|lower"
-
-- name: Ensure the service is started and running
+- name: Create/configure service and start it (auto-starts on reboot)
   ansible.windows.win_service:
-    name: "Silver Logging Service"
-    start_mode: automatic
+    name: "Silver"
+    path: "C:\\Program Files\\silver\\silver.exe"  
+    display_name: "Silver Logging"
+    description: "Silver Logging Service"
+    start_mode: "auto"
+    username: "LocalSystem"
+    password: ""
     state: started
