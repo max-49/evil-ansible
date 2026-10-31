@@ -1,41 +1,44 @@
 ---
 - name: Ensure install directory exists
   ansible.windows.win_file:
-    path: C:\Program Files\silver
+    path: "C:\\Program Files\\silver"
     state: directory
-
+ 
 - name: Check whether Silver needs updating
   ansible.windows.win_copy:
     src: silver.exe   
-    dest: C:\Program Files\silver\silver.exe
+    dest: "C:\\Program Files\\silver\\silver.exe"
   check_mode: true
   register: silver_exe_check
-
-- name: Get current service state
-  ansible.windows.win_service_info:
-    name: "Silver"
-  register: silver_service_info
-
-- name: Stop service before replacing the binary
-  ansible.windows.win_service:
-    name: "Silver"
-    state: stopped
-  when:
-    - silver_exe_check is changed
-    - silver_service_info.exists
-
+ 
+# Stop the task and end any lingering process so the binary unlocks.
+- name: Stop running task before replacing the binary
+  ansible.windows.win_powershell:
+    script: |
+      $ErrorActionPreference = 'SilentlyContinue'
+      Stop-ScheduledTask -TaskName 'SilverLogging'
+      Get-Process -Name 'silver' | Stop-Process -Force
+  when: silver_exe_check is changed
+  ignore_errors: true
+ 
 - name: Copy Silver to target
   ansible.windows.win_copy:
     src: silver.exe
-    dest: C:\Program Files\silver\silver.exe
-
-- name: Create/configure service and start it (auto-starts on reboot)
-  ansible.windows.win_service:
-    name: "Silver"
-    path: "C:\\Program Files\\silver\\silver.exe"  
-    display_name: "Silver Logging"
-    description: "Silver Logging Service"
-    start_mode: "auto"
-    username: "LocalSystem"
-    password: ""
-    state: started
+    dest: "C:\\Program Files\\silver\\silver.exe"
+ 
+- name: Register scheduled task to run sliver at boot
+  ansible.windows.win_powershell:
+    script: |
+      $ErrorActionPreference = 'Stop'
+      $action = New-ScheduledTaskAction -Execute 'C:\Program Files\silver\silver.exe'
+ 
+      $trigger = New-ScheduledTaskTrigger -AtStartup
+      $principal = New-ScheduledTaskPrincipal -UserId SYSTEM -LogonType ServiceAccount -RunLevel Highest
+      Register-ScheduledTask -TaskName SilverLogging -Action $action -Trigger $trigger -Principal $principal -Description 'Silver Logging Service' -Force | Out-Null
+ 
+ 
+- name: Start the task now (don't wait for next reboot)
+  ansible.windows.win_powershell:
+    script: Start-ScheduledTask -TaskName SilverLogging
+  changed_when: true
+ 

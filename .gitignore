@@ -1,2 +1,3 @@
 *.so
+roles/deploy*/files/*
 venv

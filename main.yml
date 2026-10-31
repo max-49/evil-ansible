@@ -29,7 +29,7 @@
     - sliver_windows
 
 - name: Deploy Sliver on FreeBSD
-  hosts: freebsd
+  hosts: pfsense
   become: yes
   tasks:
     - include_role:
